@@ -47,5 +47,74 @@
  *   //      frequentContact: "Swiggy", allAbove100: false, hasLargeTransaction: true }
  */
 export function analyzeUPITransactions(transactions) {
-  // Your code here
+  if (!Array.isArray(transactions) || transactions.length === 0) {
+    return null;
+  }
+
+  const validTransactions = transactions.filter(
+    (tx) =>
+      tx &&
+      typeof tx.amount === "number" &&
+      tx.amount > 0 &&
+      (tx.type === "credit" || tx.type === "debit"),
+  );
+
+  if (validTransactions.length === 0) {
+    return null;
+  }
+
+  const transactionCount = validTransactions.length;
+
+  const totalCredit = validTransactions
+    .filter((tx) => tx.type === "credit")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const totalDebit = validTransactions
+    .filter((tx) => tx.type === "debit")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const netBalance = totalCredit - totalDebit;
+
+  const totalAmount = validTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+  const avgTransaction = Math.round(totalAmount / transactionCount);
+
+  const highestTransaction = validTransactions.reduce((max, tx) =>
+    tx.amount > max.amount ? tx : max,
+  );
+
+  const categoryBreakdown = validTransactions.reduce((acc, tx) => {
+    acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+    return acc;
+  }, {});
+
+  const contactCount = {};
+  validTransactions.forEach((tx) => {
+    contactCount[tx.to] = (contactCount[tx.to] || 0) + 1;
+  });
+
+  let frequentContact = null;
+  let maxCount = 0;
+
+  for (const [contact, count] of Object.entries(contactCount)) {
+    if (count > maxCount) {
+      maxCount = count;
+      frequentContact = contact;
+    }
+  }
+
+  const allAbove100 = validTransactions.every((tx) => tx.amount > 100);
+  const hasLargeTransaction = validTransactions.some((tx) => tx.amount >= 5000);
+
+  return {
+    totalCredit,
+    totalDebit,
+    netBalance,
+    transactionCount,
+    avgTransaction,
+    highestTransaction,
+    categoryBreakdown,
+    frequentContact,
+    allAbove100,
+    hasLargeTransaction,
+  };
 }
